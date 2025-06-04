@@ -1,0 +1,52 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+  uid: 7e5a95d4-abc5-4798-83ff-f9678fa2c36e
+  resourceVersion: '5369150'
+  creationTimestamp: '2025-05-29T21:09:40Z'
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring-persistence
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"config.yaml":"enableUserWorkload: true\nprometheusK8s:\n  volumeClaimTemplate:\n    spec:\n      storageClassName: ocs-storagecluster-ceph-rbd\n      resources:\n        requests:\n          storage: 100Gi"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/instance":"openshift-monitoring-persistence"},"name":"cluster-monitoring-config","namespace":"openshift-monitoring"}}
+  managedFields:
+    - manager: argocd-controller
+      operation: Update
+      apiVersion: v1
+      time: '2025-06-03T18:55:59Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:data': {}
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:kubectl.kubernetes.io/last-applied-configuration': {}
+          'f:labels':
+            .: {}
+            'f:app.kubernetes.io/instance': {}
+    - manager: Mozilla
+      operation: Update
+      apiVersion: v1
+      time: '2025-06-03T22:24:45Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:data':
+          'f:config.yaml': {}
+        'f:immutable': {}
+immutable: false
+data:
+  config.yaml: |-
+    enableUserWorkload: true
+    prometheusK8s:
+      externalLabels:
+        ocp_cluster_name: simpsons
+      remoteWrite:
+      - url: "http://10.1.1.100:9009/api/v1/push"
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ocs-storagecluster-ceph-rbd
+          resources:
+            requests:
+              storage: 100Gi

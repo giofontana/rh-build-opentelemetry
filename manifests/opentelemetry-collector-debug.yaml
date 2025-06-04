@@ -114,39 +114,27 @@ spec:
     exporters:
       debug:
         verbosity: detailed
-#      otlphttp:
-#        endpoint: <otlp-endpoint>:4317
-#        tls:
-#          ca_file: ca.pem
-#          cert_file: cert.pem
-#          key_file: key.pem
-#          insecure: false
-#          insecure_skip_verify: false
-#        headers:
-#          X-Scope-OrgID: "dev"
 
     service:
       pipelines:
-        metrics:
-          receivers:
-            - hostmetrics
-            - kubeletstats
-            - k8s_cluster
-          processors:
-            - k8sattributes
+        logs:
           exporters:
             - debug
-            #- otlphttp
-        logs:
+          processors: []
           receivers:
             - k8sobjects
             - journald
             - k8s_events
             - k8s_cluster
-          processors: []
+        metrics:
           exporters:
-            - debug   
-            #- otlp  
+            - debug
+          processors:
+            - k8sattributes
+          receivers:
+            - hostmetrics
+            - kubeletstats
+            - k8s_cluster
   env:
     - name: K8S_NODE_NAME
       valueFrom:

@@ -1,0 +1,101 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel
+  namespace: k8s-otel
+spec:
+  serviceAccount: otel
+  mode: daemonset  
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - FSETID
+      - KILL
+      - NET_BIND_SERVICE
+      - SETGID
+      - SETPCAP
+      - SETUID
+    readOnlyRootFilesystem: true
+    seLinuxOptions:
+      type: spc_t
+    seccompProfile:
+      type: RuntimeDefault  
+  volumeMounts:
+    - name: cabundle-volume
+      mountPath: /etc/pki/ca-trust/source/service-ca
+      readOnly: true
+    - mountPath: /hostfs
+      name: host
+      readOnly: true      
+    - name: journal-logs
+      mountPath: /var/log/journal/
+      readOnly: true      
+  volumes:
+    - name: cabundle-volume
+      configMap:
+        name: cabundle
+    - hostPath:
+        path: /
+      name: host     
+    - name: journal-logs
+      hostPath:
+        path: /var/log/journal         
+  config:
+    processors: {}
+    receivers:
+      k8sobjects:
+        auth_type: serviceAccount
+        objects:
+          - name: pods
+            mode: pull 
+            interval: 60s
+          - name: events
+            mode: watch
+      k8s_cluster:
+        distribution: openshift
+        collection_interval: 60s        
+      journald:
+        files: /var/log/journal/*/*
+        priority: info 
+        units:
+          - kubelet
+          - crio
+          - init.scope
+          - dnsmasq
+        all: true
+        retry_on_failure:
+          enabled: true
+          initial_interval: 1s
+          max_interval: 60s
+          max_elapsed_time: 5m
+      k8s_events:
+        #namespaces: [project1, project2]
+    exporters:
+      debug:
+        verbosity: basic
+      otlphttp/logs:
+        endpoint: 'http://10.1.1.100:3100/otlp'
+        tls:
+          insecure: true
+
+    service:
+      pipelines:
+        logs:
+          exporters:
+            - debug
+            - otlphttp/logs
+          processors: []
+          receivers:
+            - k8sobjects
+            - journald
+            - k8s_events
+            - k8s_cluster
+  env:
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName

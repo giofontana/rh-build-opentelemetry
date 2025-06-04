@@ -3,7 +3,7 @@ kind: SecurityContextConstraints
 metadata:
   name: otel-scc
 users:
-- system:serviceaccount:k8s-otel:otel
+- system:serviceaccount:<namespace>:otel
 
 allowHostDirVolumePlugin: true
 allowHostIPC: false

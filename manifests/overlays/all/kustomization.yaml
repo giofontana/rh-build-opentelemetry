@@ -13,11 +13,6 @@ patches:
         value: system:serviceaccount:k8s-otel:otel
 
 resources:
-  - namespace.yaml
-  - service-account.yaml
-  - cluster-role-bindings.yaml
-  - cluster-role.yaml
-  - scc.yaml
-  - config-maps.yaml
+  - ../../base
   - opentelemetry-collector.yaml
 

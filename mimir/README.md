@@ -2,6 +2,12 @@
 
 1. RHEL server (tested on RHEL 9).
 2. Subscribed and with either appstream and baseos repos enabled.
+3. For simplicity, selinux is disabled in this demo. To disable it, run the following:
+
+```bash
+sudo sed -i 's/^SELINUX=.*/SELINUX=permissive/' /etc/selinux/config
+sudo reboot
+```
 
 # Install Mimir
 
@@ -22,6 +28,9 @@ cat <<EOF > ~/demo.yaml
 multitenancy_enabled: false
 limits:
   promote_otel_resource_attributes: "k8s.pod.uid,k8s.pod.name,k8s.namespace.name,k8s.container.name,k8s.node.name,k8s.pod.start_time,service.name,host.name"
+  ingestion_rate: 1000000
+  max_global_series_per_user: 5000000
+  max_label_names_per_series: 1000
 
 blocks_storage:
   backend: filesystem
@@ -76,7 +85,7 @@ podman run -d \
   --name mimir \
   --network grafanet \
   --publish 9009:9009 \
-  --volume "$(pwd)"/demo.yaml:/etc/mimir/demo.yaml grafana/mimir:latest \
+  --volume /root/demo.yaml:/etc/mimir/demo.yaml grafana/mimir:latest \
   --config.file=/etc/mimir/demo.yaml
 ```
 
@@ -108,6 +117,6 @@ wget https://raw.githubusercontent.com/grafana/loki/v3.4.1/clients/cmd/promtail/
 Deploy Loki and Promtail containers:
 
 ```bash
-podman run -d --name loki --network grafanet -v $(pwd):/mnt/config -p 3100:3100 grafana/loki:3.4.1 -config.file=/mnt/config/loki-config.yaml
-podman run -d --name promtail --network grafanet -v $(pwd):/mnt/config -v /var/log:/var/log grafana/promtail:3.4.1 -config.file=/mnt/config/promtail-config.yaml
+podman run -d --name loki --network grafanet -v /root/loki:/mnt/config -p 3100:3100 grafana/loki:3.4.1 -config.file=/mnt/config/loki-config.yaml
+podman run -d --name promtail --network grafanet -v /root/loki:/mnt/config -v /var/log:/var/log grafana/promtail:3.4.1 -config.file=/mnt/config/promtail-config.yaml
 ```

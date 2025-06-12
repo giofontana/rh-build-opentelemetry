@@ -16,13 +16,13 @@ Become root and install dependencies:
 ```bash
 sudo -i
 dnf install podman wget -y
-mkdir ~/mimir
+mkdir -p ~/mimir/data
 ```
 
 Create Mimir conf file:
 
 ```bash
-cat <<EOF > ~/demo.yaml
+cat <<EOF > ~/mimir/demo.yaml
 # Do not use this configuration in production.
 # It is for demonstration purposes only.
 multitenancy_enabled: false
@@ -85,7 +85,9 @@ podman run -d \
   --name mimir \
   --network grafanet \
   --publish 9009:9009 \
-  --volume /root/demo.yaml:/etc/mimir/demo.yaml grafana/mimir:latest \
+  --volume /root/mimir/demo.yaml:/etc/mimir/demo.yaml \
+  --volume /root/mimir/data:/root/mimir \
+  grafana/mimir:latest \
   --config.file=/etc/mimir/demo.yaml
 ```
 
@@ -97,10 +99,18 @@ curl http://localhost:9009
 
 # Install Grafana
 
+mkdir -p ~/grafana/data
+chown -R 472:472 ~/grafana/data
+
 Deploy container:
 
 ```bash
-podman run -d --rm --name=grafana --network=grafanet -p 3000:3000 grafana/grafana
+podman run -d \
+  --rm \
+  --name=grafana \
+  --network=grafanet \
+  --volume /root/grafana/data:/var/lib/grafana \
+  -p 3000:3000 grafana/grafana
 ```
 
 # Install Loki
@@ -108,8 +118,11 @@ podman run -d --rm --name=grafana --network=grafanet -p 3000:3000 grafana/grafan
 Create Loki conf file:
 
 ```bash
-mkdir ~/loki
-cd ~/loki
+mkdir -p ~/loki/data
+chown -R 10001:10001 ~/loki/data
+mkdir -p ~/loki/config
+
+cd ~/loki/config
 wget https://raw.githubusercontent.com/grafana/loki/v3.4.1/cmd/loki/loki-local-config.yaml -O loki-config.yaml
 wget https://raw.githubusercontent.com/grafana/loki/v3.4.1/clients/cmd/promtail/promtail-docker-config.yaml -O promtail-config.yaml
 ```
@@ -117,6 +130,19 @@ wget https://raw.githubusercontent.com/grafana/loki/v3.4.1/clients/cmd/promtail/
 Deploy Loki and Promtail containers:
 
 ```bash
-podman run -d --name loki --network grafanet -v /root/loki:/mnt/config -p 3100:3100 grafana/loki:3.4.1 -config.file=/mnt/config/loki-config.yaml
-podman run -d --name promtail --network grafanet -v /root/loki:/mnt/config -v /var/log:/var/log grafana/promtail:3.4.1 -config.file=/mnt/config/promtail-config.yaml
+podman run -d \
+  --name loki \
+  --network grafanet \
+  -v /root/loki/config:/mnt/config \
+  -v /root/loki/data:/tmp/loki \
+  -p 3100:3100 grafana/loki:3.4.1 \
+  -config.file=/mnt/config/loki-config.yaml
+
+podman run -d \
+  --name promtail \
+  --network grafanet \
+  -v /root/loki/config:/mnt/config \
+  -v /var/log:/var/log \
+  grafana/promtail:3.4.1 \
+  -config.file=/mnt/config/promtail-config.yaml
 ```

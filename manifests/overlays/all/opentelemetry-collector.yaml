@@ -109,8 +109,7 @@ spec:
           initial_interval: 1s
           max_interval: 60s
           max_elapsed_time: 5m
-      k8s_events:
-        #namespaces: [project1, project2]
+      k8s_events: {}
     exporters:
       debug:
         verbosity: basic

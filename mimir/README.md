@@ -99,8 +99,10 @@ curl http://localhost:9009
 
 # Install Grafana
 
+```bash
 mkdir -p ~/grafana/data
 chown -R 472:472 ~/grafana/data
+```
 
 Deploy container:
 
